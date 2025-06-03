@@ -1,9 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  // Color scheme
-  const COLOR_PRIMARY = '#4A90E2';
-  const COLOR_SECONDARY = '#FFFFFF';
-  const COLOR_ACCENT = '#F5A623';
+  // Color palette and category colors for UI mapping
   const CATEGORY_COLORS = ['#F5A623', '#50E3C2', '#B8E986', '#F8E71C', '#D0021B', '#9B9B9B'];
 
   let notes = [];
@@ -80,7 +77,8 @@
   }
 
   // PUBLIC_INTERFACE
-  function onEditorKey(event) {
+  function onEditorKey() {
+    // Placeholder for keyboard shortcuts (not currently used)
     return true;
   }
 
@@ -385,7 +383,7 @@
         <div style="margin-top:0.6em;">No notes found.</div>
       </div>
     {/if}
-    {#each filteredNotes() as note, idx (note.id)}
+    {#each filteredNotes() as note (note.id)}
       <div class="note-preview" on:click={() => editNote(note)}>
         <div style="flex:1;">
           <div class="note-title">
@@ -393,7 +391,7 @@
           </div>
           <div class="note-categories">
             {#if note.categories}
-              {#each note.categories as cat, i}
+              {#each note.categories as cat, i (cat)}
                 <span class="category-label" style="background:{CATEGORY_COLORS[i % CATEGORY_COLORS.length]};">{cat}</span>
               {/each}
             {/if}
@@ -437,13 +435,13 @@
           on:keydown={(e) => { if (e.key==='Enter'){ addCategory(); e.preventDefault(); } }}/>
         <button type="button" on:click={addCategory} style="border-radius:6px;font-size:1.16em; background:#4A90E2; color:white;">+</button>
         <datalist id="suggest-cats">
-          {#each Array.from(new Set(notes.flatMap(x=>x.categories))) as catOption}
+          {#each Array.from(new Set(notes.flatMap(x=>x.categories))) as catOption (catOption)}
             <option value={catOption}>{catOption}</option>
           {/each}
         </datalist>
       </div>
       <div class="note-categories">
-        {#each currentNote.categories as cat, i}
+        {#each currentNote.categories as cat, i (cat)}
           <span class="category-label" style="background: {CATEGORY_COLORS[i%CATEGORY_COLORS.length]};">
             {cat}
             <button class="category-remove" title="Remove tag" type="button" on:click={() => removeCategory(cat)}>×</button>
