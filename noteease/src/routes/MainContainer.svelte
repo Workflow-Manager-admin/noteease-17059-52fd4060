@@ -1,11 +1,11 @@
 <script>
+  import { onMount } from 'svelte';
   // Color scheme
   const COLOR_PRIMARY = '#4A90E2';
   const COLOR_SECONDARY = '#FFFFFF';
   const COLOR_ACCENT = '#F5A623';
   const CATEGORY_COLORS = ['#F5A623', '#50E3C2', '#B8E986', '#F8E71C', '#D0021B', '#9B9B9B'];
 
-  // Note shape: { id, title, content, categories, created, updated }
   let notes = [];
   let search = '';
   let showModal = false;
@@ -14,7 +14,6 @@
   let categoryInput = '';
   let uniqueId = 1; // For demo; normally use uuid
 
-  // Load from localStorage on mount
   onMount(() => {
     const saved = localStorage.getItem('noteease-notes');
     if (saved) {
@@ -23,7 +22,6 @@
     }
   });
 
-  // Save to localStorage whenever notes change
   $: localStorage.setItem('noteease-notes', JSON.stringify(notes));
 
   // PUBLIC_INTERFACE
@@ -63,6 +61,7 @@
   function deleteNote(id) {
     if (confirm('Delete this note?')) {
       notes = notes.filter(n => n.id !== id);
+      if (showModal && currentNote.id === id) showModal = false;
     }
   }
 
@@ -82,12 +81,9 @@
 
   // PUBLIC_INTERFACE
   function onEditorKey(event) {
-    // Support basic text formatting via toolbar or keyboard shortcuts
-    // (bold/italic via buttons below)
     return true;
   }
 
-  // Text formatting functions
   function formatSelected(tag) {
     let textarea = document.getElementById('note-content');
     if (!textarea) return;
@@ -100,15 +96,11 @@
     if (tag === 'b') { openTag = '<b>'; closeTag = '</b>'; }
     if (tag === 'i') { openTag = '<i>'; closeTag = '</i>'; }
     if (tag === 'ul') {
-      // For bullet, surround line with <ul><li>..</li></ul>
-      openTag = '<ul><li>'; closeTag = '</li></ul>';
-      // If multi-line, wrap each line in <li>
       let lines = selected.split('\n').map(line => line ? `<li>${line}</li>` : '').join('');
       selected = `<ul>${lines}</ul>`;
       currentNote.content = before + selected + after;
       return;
     }
-    // Apply tag
     currentNote.content = before + openTag + selected + closeTag + after;
   }
 
@@ -125,12 +117,9 @@
 
   // PUBLIC_INTERFACE
   function snippet(text) {
-    // Return plain text, max 60 chars
     const s = text.replace(/<[^>]+>/g, '');
     return s.length > 65 ? s.substring(0, 65) + '…' : s;
   }
-
-  import { onMount } from 'svelte';
 </script>
 
 <style>
@@ -143,7 +132,7 @@
   .main {
     max-width: 700px;
     margin: 2em auto;
-    background: {COLOR_SECONDARY};
+    background: #FFFFFF;
     border-radius: 20px;
     box-shadow: 0 4px 24px 0 rgba(74,144,226, 0.11), 0 1.5px 1.5px 0 rgba(0,0,0,0.02);
     padding-bottom: 80px;
@@ -152,7 +141,7 @@
     overflow: visible;
   }
   .header-bar {
-    background: {COLOR_PRIMARY};
+    background: #4A90E2;
     padding: 1.4em 2em 1em 2em;
     border-radius: 20px 20px 0 0;
     color: white;
@@ -193,7 +182,7 @@
     gap: 1.2em;
   }
   .note-preview:hover {
-    border-color: {COLOR_PRIMARY};
+    border-color: #4A90E2;
     background: #e6f1fc;
     box-shadow: 0 1.5px 8px 0 rgba(74,144,226,0.085);
   }
@@ -210,7 +199,7 @@
   }
   .category-label {
     font-size: 0.85em;
-    background: {COLOR_ACCENT};
+    background: #F5A623;
     color: #fff;
     border-radius: 7px;
     padding: 2.5px 10px;
@@ -237,7 +226,7 @@
     bottom: 6vh;
     width: 62px;
     height: 62px;
-    background: {COLOR_PRIMARY};
+    background: #4A90E2;
     color: white;
     display: flex;
     align-items: center;
@@ -263,7 +252,7 @@
     justify-content: center;
   }
   .modal {
-    background: {COLOR_SECONDARY};
+    background: #FFFFFF;
     min-width: 330px;
     max-width: 97vw;
     border-radius: 15px;
@@ -276,7 +265,7 @@
   }
   .modal h2 {
     margin-bottom: 0.2em;
-    color: {COLOR_PRIMARY};
+    color: #4A90E2;
     font-weight: bold;
     font-size: 1.17em;
   }
@@ -310,11 +299,11 @@
     transition: border 0.15s;
   }
   .modal input[type="text"]:focus, .modal textarea:focus {
-    border: 1.5px solid {COLOR_PRIMARY};
+    border: 1.5px solid #4A90E2;
   }
   .modal .toolbar button {
     margin-right: 7px;
-    background: {COLOR_ACCENT};
+    background: #F5A623;
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -329,7 +318,7 @@
     margin-bottom: 2px;
   }
   .modal .note-categories .category-label {
-    background: {COLOR_PRIMARY};
+    background: #4A90E2;
     font-weight: 600;
     color: #fff;
   }
@@ -349,7 +338,7 @@
     margin-bottom: -0.2em;
   }
   .modal .actions button {
-    background: {COLOR_PRIMARY};
+    background: #4A90E2;
     color: #fff;
     border: none;
     border-radius: 7px;
@@ -375,8 +364,8 @@
   }
 </style>
 
-<div class="main" style="background: {COLOR_SECONDARY};">
-  <div class="header-bar" style="background: {COLOR_PRIMARY};">
+<div class="main">
+  <div class="header-bar">
     <div style="font-size:1.23em; font-weight: bold; letter-spacing: -.02em; line-height:1.3;">
       NoteEase
     </div>
@@ -396,10 +385,12 @@
         <div style="margin-top:0.6em;">No notes found.</div>
       </div>
     {/if}
-    {#each filteredNotes() as note}
+    {#each filteredNotes() as note, idx (note.id)}
       <div class="note-preview" on:click={() => editNote(note)}>
         <div style="flex:1;">
-          <div class="note-title">{note.title || <span style="color:#aaa; font-weight:normal;">Untitled note</span>}</div>
+          <div class="note-title">
+            {#if note.title}{note.title}{:else}<span style="color:#aaa; font-weight:normal;">Untitled note</span>{/if}
+          </div>
           <div class="note-categories">
             {#if note.categories}
               {#each note.categories as cat, i}
@@ -444,7 +435,7 @@
         <input id="note-cat" type="text" bind:value={categoryInput} maxlength="22" style="flex:1"
           placeholder="Add category…" list="suggest-cats"
           on:keydown={(e) => { if (e.key==='Enter'){ addCategory(); e.preventDefault(); } }}/>
-        <button type="button" on:click={addCategory} style="border-radius:6px;font-size:1.16em; background:{COLOR_PRIMARY}; color:white;">+</button>
+        <button type="button" on:click={addCategory} style="border-radius:6px;font-size:1.16em; background:#4A90E2; color:white;">+</button>
         <datalist id="suggest-cats">
           {#each Array.from(new Set(notes.flatMap(x=>x.categories))) as catOption}
             <option value={catOption}>{catOption}</option>
@@ -464,7 +455,7 @@
           <button class="delete" type="button" on:click={() => { deleteNote(currentNote.id); showModal=false; }}>Delete</button>
         {/if}
         <button class="cancel" type="button" on:click={() => showModal=false}>Cancel</button>
-        <button type="submit" on:click={saveNote} style="background:{COLOR_PRIMARY};">{editing ? 'Update' : 'Save'}</button>
+        <button type="submit" on:click={saveNote} style="background:#4A90E2;">{editing ? 'Update' : 'Save'}</button>
       </div>
     </div>
   </div>
